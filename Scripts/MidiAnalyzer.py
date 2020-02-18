@@ -1,4 +1,5 @@
 import Markov as mk
+import Scale as sc
 import time
 import threading
 import mido
@@ -16,13 +17,16 @@ def load_ports():
     inport = mido.open_input(inports[0])
     outport = mido.open_output(outports[0])
     return inport, outport
-def print_messages():
+def print_notes():
     for msg in midi_file:
         try:
             print(f'Channel: {msg.channel} - Note: {msg.note}({GetNoteName(msg.note)}) - Velocity {msg.velocity} - Time: {msg.time}')
         except:
             #print(f'{msg}')
             i=0
+def print_messages():
+    for msg in midi_file:
+        print(msg)
 def print_meta_messages():
     for msg in midi_file:
         if msg.is_meta:
@@ -61,33 +65,8 @@ def play_tracks():
         time.sleep(msg.time)
 def GetNoteValue(midiNote):
     # print(f'note={midiNote.note % 12} vel={item.velocity} time={item.time}')
-    print(f'{GetNoteName(midiNote.note % 12)}')
-def GetNoteName(value, flats=True):
-    value %= 12
-    if value == 0:
-        return 'C'
-    elif value == 1:
-        return 'Db' if flats else 'C#'
-    elif value == 2:
-        return 'D'
-    elif value == 3:
-        return 'Eb' if flats else 'D#'
-    elif value == 4:
-        return 'E'
-    elif value == 5:
-        return 'F'
-    elif value == 6:
-        return 'Gb' if flats else 'F#'
-    elif value == 7:
-        return 'G'
-    elif value == 8:
-        return 'Ab' if flats else 'G#'
-    elif value == 9:
-        return 'A'
-    elif value == 10:
-        return 'Bb' if flats else 'A#'
-    elif value == 11:
-        return 'B'
+    print(f'{Scale.get_note_name(midiNote.note % 12)}')
+
 def get_max_channel():
     max = -1
     for msg in midi_file:
@@ -100,14 +79,41 @@ def get_max_channel():
 def copy(item, n, velocity, length):
     item.copy(note=n, velocity=velocity,time=length)
 
+    def GetNoteName(value, flats=True):
+        value %= 12
+        if value == 0:
+            return 'C'
+        elif value == 1:
+            return 'Db' if flats else 'C#'
+        elif value == 2:
+            return 'D'
+        elif value == 3:
+            return 'Eb' if flats else 'D#'
+        elif value == 4:
+            return 'E'
+        elif value == 5:
+            return 'F'
+        elif value == 6:
+            return 'Gb' if flats else 'F#'
+        elif value == 7:
+            return 'G'
+        elif value == 8:
+            return 'Ab' if flats else 'G#'
+        elif value == 9:
+            return 'A'
+        elif value == 10:
+            return 'Bb' if flats else 'A#'
+        elif value == 11:
+            return 'B'
 
 
 
 
     #midi_path = 'Some MIDI Files/Castlevania - Heart of Fire.mid'
-midi_path = 'Some MIDI Files/Darude_-_Sandstorm.mid'
+midi_path = '../Some MIDI Files/sdfsdf.mid'
 midi_file = MidiFile(midi_path)
 
+print_messages()
 
 mk.train(midi_file)
 
