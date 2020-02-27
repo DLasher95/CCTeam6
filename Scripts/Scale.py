@@ -23,16 +23,24 @@
 
 import random
 c_major = [0, 2, 4, 5, 7, 9, 11]
-key, mode = 0, 0
-scale = c_major[:]
 
-
-def print_scale():
-    print(f'\'{get_note_name(key)} {get_mode_name(mode)}\'')
+def get_scale(key=0,mode=0):
+    scale = []
     for i in range(0, 7):
         interval = (mode + i) % 7
         note = (c_major[interval] - c_major[mode] + key) % 12
-        print(get_note_name(note))
+        scale.append(note)
+    return scale
+def scale_names(key, mode):
+    s = '['
+    print(f'\'{get_note_name(key)} {get_mode_name(mode)}\'')
+    scale = get_scale(key=key, mode=mode)
+    for i,note in enumerate(scale):
+        s += str(note)
+        if i < len(scale) - 1:
+            s += ', '
+    s += ']'
+    return s
 
 def get_note_name(value, flats=True):
     value %= 12
@@ -76,8 +84,52 @@ def get_mode_name(value):
         return 'Aeolian'
     elif value == 6:
         return 'Locrian'
+def random_key_mode():
+    return random.randrange(0, 12), random.randrange(0, 7)
 
-key = random.randrange(0, 12)
-mode = random.randrange(0, 7)
+def chord(mode=0, key=0, root=0, voices=3):
+    chord = []
+    scale = get_scale(key=key, mode=mode)
+    note = scale[root]
+    interval = 0
+    # how to apply different voicings?
+    while len(chord) < voices:
+        note = scale[(root + interval) % 7]
+        # get offset...
+        # only apply to 2nd note and beyond
+        if len(chord) > 0:
+            while note <= chord[-1]:
+                note += 12
+        chord.append(note)
+        interval += 2
+    return chord
+def note_names(chord):
+    s = '['
+    for i,note in enumerate(chord):
+        s += get_note_name(note)
+        if i < len(chord) - 1:
+            s += ', '
+    s += ']'
+    return s
+def note_values(chord):
+    s = '['
+    for i,note in enumerate(chord):
+        s += str(note)
+        if i < len(chord) - 1:
+            s += ', '
+    s += ']'
+    return s
 
-print_scale()
+
+# implement this
+# https://www.geeksforgeeks.org/print-lists-in-python-4-different-ways/
+
+key, mode = random_key_mode()
+#key = 0
+#print(scale_names(key, mode))
+
+#c = chord(key=key, mode=mode, voices=10)
+#print(chord_note_names(c))
+#print(note_values(c))
+
+

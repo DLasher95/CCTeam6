@@ -1,28 +1,29 @@
-import Markov as mk
-import Scale as sc
+from Scripts import Markov
+from Scripts import Scale
 import time
 import threading
 import mido
-from mido import MidiFile
+from mido import MidiFile, MidiTrack, Message, MetaMessage
 
 # https://mido.readthedocs.io/en/latest/midi_files.html
+# http://support.ircam.fr/docs/om/om6-manual/co/MIDI-Concepts.html
+
 tracks = []
 
-def load_ports():
+def print_ports():
     # for potential sound generation...
-    # does basically nothing right now
+    # nonfunctional
     inports = mido.get_input_names()
     outports = mido.get_output_names()
-    print('In: ' + inports[0] + ' | Out: ' + outports[0])
-    inport = mido.open_input(inports[0])
-    outport = mido.open_output(outports[0])
-    return inport, outport
+    for i, p in enumerate(inports):
+        print('Inport: ' + i + ' ' + p)
+    for i, p in enumerate(outports):
+        print('Outport: ' + i + ' ' + p)
 def print_notes():
     for msg in midi_file:
         try:
-            print(f'Channel: {msg.channel} - Note: {msg.note}({GetNoteName(msg.note)}) - Velocity {msg.velocity} - Time: {msg.time}')
+            print(f'Channel: {msg.channel} - {msg.type} - Note: {msg.note}({Scale.get_note_name(msg.note)}{msg.note//12 - 1}) - Vol: {msg.velocity} - Time: {msg.time}')
         except:
-            #print(f'{msg}')
             i=0
 def print_messages():
     for msg in midi_file:
@@ -36,9 +37,10 @@ def play_midi(m):
     for msg in m:
         time.sleep(msg.time)
         try:
-            print(f'{msg} = {GetNoteName(msg.note % 12, False)}')
+            print(f'{msg}')
         except:
             nope = 0
+
 def set_tracks():
     print(f'Tracks: {len(midi_file.tracks)}')
     for track in midi_file.tracks:
@@ -63,9 +65,6 @@ def play_tracks():
     for msg in track:
         print(f'{track}: {msg}')
         time.sleep(msg.time)
-def GetNoteValue(midiNote):
-    # print(f'note={midiNote.note % 12} vel={item.velocity} time={item.time}')
-    print(f'{Scale.get_note_name(midiNote.note % 12)}')
 
 def get_max_channel():
     max = -1
@@ -76,45 +75,25 @@ def get_max_channel():
         except:
             i = 0
     return max
-def copy(item, n, velocity, length):
-    item.copy(note=n, velocity=velocity,time=length)
+def copy_note(item, n, velocity, length):
+    item.copy_note(note=n, velocity=velocity, time=length)
+def copy_file(file):
+    mid = MidiFile()
+    for i, track in enumerate(file.tracks):
+        mid.tracks.append(MidiTrack())
+        for msg in track:
+            if msg.type == 'note_on' or msg.type == 'note_off' or msg.type == 'program_change':
+                mid.tracks[i].append(msg.copy())
+    filename = 'generated.mid'
+    mid.save(filename)
+    return filename
 
-    def GetNoteName(value, flats=True):
-        value %= 12
-        if value == 0:
-            return 'C'
-        elif value == 1:
-            return 'Db' if flats else 'C#'
-        elif value == 2:
-            return 'D'
-        elif value == 3:
-            return 'Eb' if flats else 'D#'
-        elif value == 4:
-            return 'E'
-        elif value == 5:
-            return 'F'
-        elif value == 6:
-            return 'Gb' if flats else 'F#'
-        elif value == 7:
-            return 'G'
-        elif value == 8:
-            return 'Ab' if flats else 'G#'
-        elif value == 9:
-            return 'A'
-        elif value == 10:
-            return 'Bb' if flats else 'A#'
-        elif value == 11:
-            return 'B'
+instrument = '../Some MIDI Files/electric_piano.mid'
+midi_file = MidiFile(instrument)
+generated = copy_file(midi_file)
+midi_file = MidiFile(generated)
 
-
-
-
-    #midi_path = 'Some MIDI Files/Castlevania - Heart of Fire.mid'
-midi_path = '../Some MIDI Files/sdfsdf.mid'
-midi_file = MidiFile(midi_path)
-
-print_messages()
-
-mk.train(midi_file)
-
+print(midi_file.filename)
+#print_notes()
+#print_messages()
 
