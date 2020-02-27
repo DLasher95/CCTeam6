@@ -24,11 +24,14 @@
 import random
 c_major = [0, 2, 4, 5, 7, 9, 11]
 
-def get_scale(key=0,mode=0):
+def get_scale(key=0,mode=0,clamp=False):
     scale = []
     for i in range(0, 7):
         interval = (mode + i) % 7
         note = (c_major[interval] - c_major[mode] + key) % 12
+        if clamp is False and i > 0:
+            while note < scale[i - 1]:
+                note += 12
         scale.append(note)
     return scale
 def scale_names(key, mode):

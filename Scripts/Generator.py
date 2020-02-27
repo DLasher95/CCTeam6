@@ -33,13 +33,13 @@ msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0
 
 # set instrument
 # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-instrument = 63
+instrument = 54
 msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
 track.append(msg_program)
 
 # measure must add up to [w] ticks in 4/4
-measure = [h, q, q, h, q, w, h, q, q, w]
-progression = [0, 3, 4, 2, 6, 5, 1, 6, 3, 5]
+measure = [h, q, q, h, q, q, h]
+progression = [0, 1, 2, 3, 4, 5, 6]
 
 def generate_chords(rhythm, progression, key, mode):
     if len(rhythm) != len(progression):
@@ -70,14 +70,35 @@ def string_values(p):
     # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
     return '[' + ', '.join(map(str, p)) + ']'
 
-print('Rhythm: ' + string_values(measure))
-print('Progression: ' + string_values(progression))
+def mode_by_score(score):
+    # brightest first
+    ranked_modes = [3, 0, 4, 1, 5, 2, 6]
+    if score < 0 or score > 1:
+        print('Expected score in range [0,1]')
+        return -1
+
+    # get int nearest score
+    return round(score)
+def bpm_by_score(score):
+    if score < 0 or score > 1:
+        print('Excpected value in range [0,1]')
+        return -1
+
+    bpm_min, bpm_max = 40, 180
+    bpm_range = bpm_max - bpm_min
+    return bpm_min + round(bpm_range * score)
+
 
 key, mode = Scale.random_key_mode()
+print('Rhythm: ' + string_values(measure))
+print('Progression: ' + string_values(progression))
+print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode))
+print(string_values(Scale.get_scale(key=key, mode=mode)))
+
 for msg in generate_chords(rhythm=measure, progression=progression, key=key, mode=mode):
     track.append(msg)
-    print(msg)
+    #print(msg)
 
-print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode))
+
 
 m.save('generated__.mid')
