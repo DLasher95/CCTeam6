@@ -1,4 +1,5 @@
 import mido
+import random
 from Scripts import Scale
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 
@@ -11,7 +12,7 @@ m.tracks.append(MidiTrack())
 track = m.tracks[0]
 
 # set song information
-bpm = 120
+bpm = random.randint(70, 160)
 tempo = mido.bpm2tempo(bpm)
 
 # create create timings
@@ -19,7 +20,6 @@ q = m.ticks_per_beat
 w = q * 4
 h = q * 2
 e = q // 2
-#t = q // 3
 s = q // 4
 
 # set meta information (only tempo is required)
@@ -33,13 +33,9 @@ msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0
 
 # set instrument
 # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-instrument = 54
+instrument = 4
 msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
 track.append(msg_program)
-
-# measure must add up to [w] ticks in 4/4
-measure = [h, q, q, h, q, q, h]
-progression = [0, 1, 2, 3, 4, 5, 6]
 
 def generate_chords(rhythm, progression, key, mode):
     if len(rhythm) != len(progression):
@@ -53,7 +49,7 @@ def generate_chords(rhythm, progression, key, mode):
         # turn off current chord
         for k, n in enumerate(current):
             # only add delay for 2nd chord and beyond...
-            messages.append(msg_note_off.copy(note=n, time=measure[i - 1] if k == 0 else 0))
+            messages.append(msg_note_off.copy(note=n, time=rhythm[i - 1] if k == 0 else 0))
 
         # turn on new chord, only if it's not the end of the progression
         if i < len(progression):
@@ -62,14 +58,34 @@ def generate_chords(rhythm, progression, key, mode):
             for note in chord:
                 messages.append(msg_note_on.copy(note=note+offset))
                 current.append(note+offset)
-            print(string_values(current))
-
-
+            #print(string_values(current))
     return messages
-def string_values(p):
-    # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
-    return '[' + ', '.join(map(str, p)) + ']'
+def generate_rhythm(length, options):
+    rhythm = []
+    while sum(rhythm) < length:
+        beat = random.choice(options)
+        # ensure length is not exceeded
+        while sum(rhythm) + beat > length:
+            beat = random.choice(options)
+        rhythm.append(beat)
+    return rhythm
+def generate_progression(rhythm):
+    # set all to 0
+    p = [0] * len(rhythm)
+    for i in range(1, len(p)):
+        while True:
+            p[i] = random.randint(0, 6)
+            if p[i] != p[i - 1]:
+                break
 
+    # 4, 5, or 6
+    while True:
+        p[len(p) - 1] = random.randint(4, 6)
+        if p[-1] != p[-2]:
+            break
+    return p
+
+# params
 def mode_by_score(score):
     # brightest first
     ranked_modes = [3, 0, 4, 1, 5, 2, 6]
@@ -88,17 +104,27 @@ def bpm_by_score(score):
     bpm_range = bpm_max - bpm_min
     return bpm_min + round(bpm_range * score)
 
+def string_values(p):
+    # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
+    return '[' + ', '.join(map(str, p)) + ']'
+
 
 key, mode = Scale.random_key_mode()
-print('Rhythm: ' + string_values(measure))
+print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode) + ' at ' + str(bpm) + 'bpm')
+rhythm = generate_rhythm(2 * w, [w, h, q])
+progression = generate_progression(rhythm)
+print('Rhythm: ' + string_values(rhythm))
 print('Progression: ' + string_values(progression))
-print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode))
-print(string_values(Scale.get_scale(key=key, mode=mode)))
 
-for msg in generate_chords(rhythm=measure, progression=progression, key=key, mode=mode):
-    track.append(msg)
-    #print(msg)
+# write messages
+repeats = 4
+for i in range(0, repeats):
+    for msg in generate_chords(rhythm=rhythm, progression=progression, key=key, mode=mode):
+        track.append(msg)
 
-
-
-m.save('generated__.mid')
+# https://www.w3schools.com/python/python_file_remove.asp
+# because saving raises errors if the file already exists
+import os
+if os.path.exists('generated.mid'):
+    os.remove('generated.mid')
+m.save('generated.mid')

@@ -88,12 +88,7 @@ def copy_file(file):
     mid.save(filename)
     return filename
 
-instrument = '../Some MIDI Files/electric_piano.mid'
-midi_file = MidiFile(instrument)
-generated = copy_file(midi_file)
-midi_file = MidiFile(generated)
+file_name = '../Some MIDI Files/Mario_something.mid'
+midi_file = MidiFile(file_name)
 
-print(midi_file.filename)
-#print_notes()
-#print_messages()
-
+print_messages()
