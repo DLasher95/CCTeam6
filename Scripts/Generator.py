@@ -33,17 +33,16 @@ msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0
 
 # set instrument
 # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-instrument = 4
+instrument = 48
 msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
 track.append(msg_program)
 
-def generate_chords(rhythm, progression, key, mode):
+def generate_chords(rhythm, progression, key, mode, voices=3, octave=5):
     if len(rhythm) != len(progression):
         print('Incompatible rhythm and progression')
         return
     messages = []
     current = []
-    octave = 5
     offset = octave * 12
     for i in range(len(progression) + 1):
         # turn off current chord
@@ -53,7 +52,7 @@ def generate_chords(rhythm, progression, key, mode):
 
         # turn on new chord, only if it's not the end of the progression
         if i < len(progression):
-            chord = Scale.chord(key=key, mode=mode, root=progression[i], voices=3)
+            chord = Scale.chord(key=key, mode=mode, root=progression[i], voices=voices)
             current.clear()
             for note in chord:
                 messages.append(msg_note_on.copy(note=note+offset))
@@ -80,7 +79,7 @@ def generate_progression(rhythm):
 
     # 4, 5, or 6
     while True:
-        p[len(p) - 1] = random.randint(4, 6)
+        p[len(p) - 1] = random.randint(3, 5)
         if p[-1] != p[-2]:
             break
     return p
@@ -119,7 +118,7 @@ print('Progression: ' + string_values(progression))
 # write messages
 repeats = 4
 for i in range(0, repeats):
-    for msg in generate_chords(rhythm=rhythm, progression=progression, key=key, mode=mode):
+    for msg in generate_chords(rhythm=rhythm, progression=progression, key=key, mode=mode, voices=1, octave=5):
         track.append(msg)
 
 # https://www.w3schools.com/python/python_file_remove.asp
