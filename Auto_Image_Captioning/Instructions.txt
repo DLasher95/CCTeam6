@@ -6,3 +6,4 @@ https://www.dropbox.com/s/sykhn2jbn3mztlx/models.zip?dl=0
 (3) Add folder to Auto_Image_Captioning project folder.
 
 This is a premade model, so you don't need to worry about re-running the training.
+Find the directions to use the Auto-Captioner in the sample.py folder.
