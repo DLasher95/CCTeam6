@@ -1,0 +1,8 @@
+(1) Download premade models folder from: 
+https://www.dropbox.com/s/sykhn2jbn3mztlx/models.zip?dl=0
+
+(2) Unzip
+
+(3) Add folder to Auto_Image_Captioning project folder.
+
+This is a premade model, so you don't need to worry about re-running the training.
