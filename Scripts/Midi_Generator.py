@@ -60,15 +60,34 @@ def generate_chords(rhythm, progression, key, mode):
                 current.append(note+offset)
             #print(string_values(current))
     return messages
-def generate_rhythm(length, options):
+def generate_progression_rhythm(length, options):
     rhythm = []
+
     while sum(rhythm) < length:
-        beat = random.choice(options)
-        # ensure length is not exceeded
-        while sum(rhythm) + beat > length:
+        beat = random_tie(options)
+
+        new_rhythm = rhythm.copy()
+        new_rhythm.append(beat)
+
+        # Rules
+        # length must equal rhythm
+        valid_length = sum(new_rhythm) <= length
+        # ensure length of measure is not exceeded
+        while not valid_length:
             beat = random.choice(options)
         rhythm.append(beat)
     return rhythm
+def generate_melody():
+    return 0
+
+def random_tie(beat, options, tie=True):
+    # https://en.wikipedia.org/wiki/Tie_(music)
+    # if tie, randomly append another option to the first
+
+    if tie:
+        tied_beat = random.choice(options)
+        beat += random.choice(options)
+    return beat
 def generate_progression(rhythm):
     # set all to 0
     p = [0] * len(rhythm)
@@ -78,14 +97,24 @@ def generate_progression(rhythm):
             if p[i] != p[i - 1]:
                 break
 
+
+
     # 4, 5, or 6
     while True:
         p[len(p) - 1] = random.randint(4, 6)
         if p[-1] != p[-2]:
             break
     return p
+def existing_tonic_length(intervals):
+    min_tonic_ratio = 1 / 4
+    min_tonic_length = 1 / 4 * w
 
-# params
+    # get existing tonic length
+    existing_tonic_length = 0
+    for existing_beat in rhythm:
+        if existing_beat == intervals[0]:
+            existing_tonic_length += existing_beat
+
 def mode_by_score(score):
     # brightest first
     ranked_modes = [3, 0, 4, 1, 5, 2, 6]
@@ -111,7 +140,7 @@ def string_values(p):
 
 key, mode = Scale.random_key_mode()
 print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode) + ' at ' + str(bpm) + 'bpm')
-rhythm = generate_rhythm(2 * w, [w, h, q])
+rhythm = generate_progression_rhythm(2 * w, [w, h, q])
 progression = generate_progression(rhythm)
 print('Rhythm: ' + string_values(rhythm))
 print('Progression: ' + string_values(progression))

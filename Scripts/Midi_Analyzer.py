@@ -88,7 +88,7 @@ def copy_file(file):
     mid.save(filename)
     return filename
 
-file_name = '../Some MIDI Files/Mario_something.mid'
+file_name = '../Example MIDI Files/Mario_something.mid'
 midi_file = MidiFile(file_name)
 
 print_messages()
