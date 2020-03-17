@@ -24,6 +24,11 @@
 import random
 c_major = [0, 2, 4, 5, 7, 9, 11]
 
+class Scale:
+    def __init__(self, key=-1, mode=-1):
+        self.key = random.randrange(0, 12) if key == -1 else key
+        self.mode = random.randrange(0, 7) if mode == -1 else mode
+
 def get_scale(key=0,mode=0,clamp=False):
     scale = []
     for i in range(0, 7):
@@ -128,11 +133,3 @@ def note_values(chord):
 # https://www.geeksforgeeks.org/print-lists-in-python-4-different-ways/
 
 key, mode = random_key_mode()
-#key = 0
-#print(scale_names(key, mode))
-
-#c = chord(key=key, mode=mode, voices=10)
-#print(chord_note_names(c))
-#print(note_values(c))
-
-
