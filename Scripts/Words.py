@@ -1,5 +1,5 @@
 import nltk
-# nltk.download()
+#nltk.download('wordnet')
 from nltk.corpus import wordnet as wn
 
 
@@ -27,7 +27,7 @@ def compare(i1, i2, debug=False):
                     print('[' + w1 + ', ' + w2 + '] = ' + str('% .2f' % round(one.path_similarity(two), 2)))
             except Exception as e:
                 if debug:
-                    print('Could not determine similarity of ' + s1 + ' and ' + s2)
+                    print('Could not determine similarity of ' + w1 + ' and ' + w2)
                     print(e)
 
     return score / count if count > 0 else 0

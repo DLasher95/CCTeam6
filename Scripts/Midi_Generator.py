@@ -1,31 +1,11 @@
 import mido
 import os
 import random
-from Scripts import Scale, Instruments
+from Scripts import Scale, Instruments, Words
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 
 
-# create midi file, add a track
-m = MidiFile()
 
-# type cannot be overridden
-msg_note_on = Message(type='note_on', channel=0, note=60, velocity=100, time=0)
-msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0)
-
-# create single channel track
-m.tracks.append(MidiTrack())
-track = m.tracks[0]
-
-# set song information
-bpm = random.randint(70, 160)
-tempo = mido.bpm2tempo(bpm)
-
-# create create timings
-q = m.ticks_per_beat
-w = q * 4
-h = q * 2
-e = q // 2
-s = q // 4
 
 class Composition:
     def __init__(self):
@@ -44,20 +24,46 @@ class Composition:
         m.save(file_name)
 
 
-def write_meta_info(bpm=120):
+def set_bpm(bpm=-1):
     # tempo is the only requirement
+    if bpm <= 60:
+        bpm = random.randint(70, 160)
+        print('BPM set to ' + str(bpm))
     tempo = mido.bpm2tempo(bpm)
     track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
     #track.append(MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
     #track.append(MetaMessage('key_signature', key=Scale.get_note_name(0)))
+def set_instrument(instrument=-1):
+    # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
+    #if 0 > instrument >= 127:
+    if instrument < 0 or instrument > 127:
+        instrument = random.randint(0, 127)
+        print('Instrument: ' + Instruments.instruments[instrument])
+    msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
+    track.append(msg_program)
+def calculate_instrument(words, debug=False):
+    max = 0
+    ins = 0
+    for i,name in enumerate(Instruments.instruments):
+        score = Words.compare(words, name, debug=False)
+        if score > max:
+            max = score
+            ins = i
+    if debug:
+        print('Instrument: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
+    return i
+def calculate_bpm(words, debug=False):
+    slow_score = Words.compare(words, 'slowness')
+    fast_score = Words.compare(words, 'fastness')
 
-# set instrument
-# https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-instrument = random.randint(0, 128)
-print('Chose: ' + Instruments.instruments[instrument])
-msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
-track.append(msg_program)
+    if debug:
+        print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + ']')
+def calculate_brightness(words, debug=False):
+    bright_score = Words.compare(words, 'brightness')
+    dark_score = Words.compare(words, 'darkness')
 
+    if debug:
+        print('Brightness: [%.2f' % round(dark_score, 2) + ', %.2f' % round(bright_score, 2) + ']')
 def generate_chords(rhythm, progression, key, mode):
     if len(rhythm) != len(progression):
         print('Incompatible rhythm and progression')
@@ -81,7 +87,7 @@ def generate_chords(rhythm, progression, key, mode):
                 current.append(note+offset)
             #print(string_values(current))
     return messages
-def generate_rhythm(length, options, min=-1, max=-1, max_length=-1, min_length=-1):
+def generate_rhythm(length, options, min=-1, max=-1, max_length=-1, min_length=-1, debug=False):
     rhythm = []
     # while controlling for [min or max] and it is not satisfied
     while 0 <= min > len(rhythm) or 0 <= max < len(rhythm):
@@ -99,6 +105,9 @@ def generate_rhythm(length, options, min=-1, max=-1, max_length=-1, min_length=-
                 if random.random() < 0.5:
                     beat += random.choice(options)
             rhythm.append(beat)
+
+    if debug:
+        print_rhythm(rhythm)
     return rhythm
 def generate_beat(options, min_length=-1, max_length=-1):
     beat = random.choice(options)
@@ -111,7 +120,7 @@ def generate_beat(options, min_length=-1, max_length=-1):
     return beat
 def generate_melody():
     return 0
-def generate_progression(rhythm):
+def generate_progression(rhythm, debug=False):
     # ensure that (one of) the longest beat(s) is the tonic
     longest = max(rhythm)
     # https://thispointer.com/python-how-to-find-all-indexes-of-an-item-in-a-list/
@@ -144,6 +153,8 @@ def generate_progression(rhythm):
             p[len(p) - 1] = random.randint(4, 6)
             if p[-1] != p[-2]:
                 break
+    if debug:
+        print_progression(p)
     return p
 def existing_tonic_length(intervals):
     min_tonic_ratio = 1 / 4
@@ -188,13 +199,42 @@ def save_file(name='generated'):
         os.remove(file_name)
     m.save(file_name)
 
+
+phrase = 'Its a sunny day on this old hill while I walk to work begrudgingly'
+calculate_instrument(phrase, debug=True)
+calculate_bpm(phrase, debug=True)
+calculate_brightness(phrase, debug=True)
+
+# create midi file, add a track
+m = MidiFile()
+
+# type cannot be overridden
+msg_note_on = Message(type='note_on', channel=0, note=60, velocity=100, time=0)
+msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0)
+
+# create single channel track
+m.tracks.append(MidiTrack())
+track = m.tracks[0]
+
+# set song information
+bpm = random.randint(70, 160)
+tempo = mido.bpm2tempo(bpm)
+set_bpm(bpm)
+
+# create create timings
+q = m.ticks_per_beat
+w = q * 4
+h = q * 2
+e = q // 2
+s = q // 4
+
+set_instrument()
+
 scale = Scale.Scale()
 print(Scale.get_note_name(scale.key) + ' ' + Scale.get_mode_name(scale.mode) + ' at ' + str(bpm) + 'bpm')
 
-rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2)
-print_rhythm(rhythm)
-progression = generate_progression(rhythm)
-print_progression(progression)
+rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2, debug=True)
+progression = generate_progression(rhythm, debug=True)
 
 # write messages, repeat
 repeats = 4
