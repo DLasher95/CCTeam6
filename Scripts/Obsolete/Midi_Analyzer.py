@@ -1,9 +1,8 @@
-from Scripts import Markov
 from Scripts import Scale
 import time
 import threading
 import mido
-from mido import MidiFile, MidiTrack, Message, MetaMessage
+from mido import MidiFile, MidiTrack
 
 # https://mido.readthedocs.io/en/latest/midi_files.html
 # http://support.ircam.fr/docs/om/om6-manual/co/MIDI-Concepts.html
@@ -84,11 +83,11 @@ def copy_file(file):
         for msg in track:
             if msg.type == 'note_on' or msg.type == 'note_off' or msg.type == 'program_change':
                 mid.tracks[i].append(msg.copy())
-    filename = 'generated.mid'
+    filename = '../generated.mid'
     mid.save(filename)
     return filename
 
-file_name = '../Example MIDI Files/Mario_something.mid'
+file_name = '../../Example MIDI Files/Mario_something.mid'
 midi_file = MidiFile(file_name)
 
 print_messages()

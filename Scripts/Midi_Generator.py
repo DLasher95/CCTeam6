@@ -1,11 +1,16 @@
 import mido
+import os
 import random
-from Scripts import Scale
+from Scripts import Scale, Instruments
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 
 
 # create midi file, add a track
 m = MidiFile()
+
+# type cannot be overridden
+msg_note_on = Message(type='note_on', channel=0, note=60, velocity=100, time=0)
+msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0)
 
 # create single channel track
 m.tracks.append(MidiTrack())
@@ -22,18 +27,34 @@ h = q * 2
 e = q // 2
 s = q // 4
 
-# set meta information (only tempo is required)
-track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
-track.append(MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
-track.append(MetaMessage('key_signature', key=Scale.get_note_name(0)))
+class Composition:
+    def __init__(self):
+        self.midi_file = MidiFile()
+        self.name = 'example'
+        self.tracks = 0
+    def add_track(self, instrument=-1):
+        self.midi_file.tracks.append(MidiTrack())
+        return self.midi_file.tracks.count() - 1
+    def save_file(name='generated'):
+        file_name = name + '.mid' if name.__contains__('.mid') else name
+        # https://www.w3schools.com/python/python_file_remove.asp
+        # because saving raises errors if the file already exists
+        if os.path.exists(file_name):
+            os.remove(file_name)
+        m.save(file_name)
 
-# type cannot be overridden
-msg_note_on = Message(type='note_on', channel=0, note=60, velocity=100, time=0)
-msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0)
+
+def write_meta_info(bpm=120):
+    # tempo is the only requirement
+    tempo = mido.bpm2tempo(bpm)
+    track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
+    #track.append(MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
+    #track.append(MetaMessage('key_signature', key=Scale.get_note_name(0)))
 
 # set instrument
 # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-instrument = 4
+instrument = random.randint(0, 128)
+print('Chose: ' + Instruments.instruments[instrument])
 msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
 track.append(msg_program)
 
@@ -60,50 +81,69 @@ def generate_chords(rhythm, progression, key, mode):
                 current.append(note+offset)
             #print(string_values(current))
     return messages
-def generate_progression_rhythm(length, options):
+def generate_rhythm(length, options, min=-1, max=-1, max_length=-1, min_length=-1):
     rhythm = []
-
-    while sum(rhythm) < length:
-        beat = random_tie(options)
-
-        new_rhythm = rhythm.copy()
-        new_rhythm.append(beat)
-
-        # Rules
-        # length must equal rhythm
-        valid_length = sum(new_rhythm) <= length
-        # ensure length of measure is not exceeded
-        while not valid_length:
+    # while controlling for [min or max] and it is not satisfied
+    while 0 <= min > len(rhythm) or 0 <= max < len(rhythm):
+        rhythm = []
+        while sum(rhythm) < length:
             beat = random.choice(options)
-        rhythm.append(beat)
+            if random.random() < 0.5:
+                beat += random.choice(options)
+
+            # Rules
+            # length must equal rhythm
+            # ensure length of measure is not exceeded
+            while sum(rhythm) + beat > length:
+                beat = random.choice(options)
+                if random.random() < 0.5:
+                    beat += random.choice(options)
+            rhythm.append(beat)
     return rhythm
+def generate_beat(options, min_length=-1, max_length=-1):
+    beat = random.choice(options)
+    # tie randomly
+    if random.random() < 0.5:
+        beat += random.choice(options)
+
+    # while max_length < 0 or beat > max_length or beat < min_length
+
+    return beat
 def generate_melody():
     return 0
-
-def random_tie(beat, options, tie=True):
-    # https://en.wikipedia.org/wiki/Tie_(music)
-    # if tie, randomly append another option to the first
-
-    if tie:
-        tied_beat = random.choice(options)
-        beat += random.choice(options)
-    return beat
 def generate_progression(rhythm):
-    # set all to 0
-    p = [0] * len(rhythm)
-    for i in range(1, len(p)):
+    # ensure that (one of) the longest beat(s) is the tonic
+    longest = max(rhythm)
+    # https://thispointer.com/python-how-to-find-all-indexes-of-an-item-in-a-list/
+    longest_indices = [i for i, r in enumerate(rhythm) if r == longest]
+    #for i,r in enumerate(rhythm):
+        #if r == longest:
+            #longest_indices.append(i)
+
+    # randomly set one of these to the tonic
+    tonic_index = random.choice(longest_indices)
+
+    # set all to invalid
+    p = [-1] * len(rhythm)
+    p[tonic_index] = 0
+
+    for i in range(0, len(p)):
+        # dont set if it has already been set
+        if p[i] >= 0:
+            continue
         while True:
             p[i] = random.randint(0, 6)
-            if p[i] != p[i - 1]:
+            # doesn't match previous, and doesn't match next (if next exists)
+            if p[i] != p[i - 1] and (i == len(p) - 1 or p[i] != p[i + 1]):
                 break
 
-
-
-    # 4, 5, or 6
-    while True:
-        p[len(p) - 1] = random.randint(4, 6)
-        if p[-1] != p[-2]:
-            break
+    cadence = False
+    if cadence:
+        # end with 4th, 5th, or 6th
+        while True:
+            p[len(p) - 1] = random.randint(4, 6)
+            if p[-1] != p[-2]:
+                break
     return p
 def existing_tonic_length(intervals):
     min_tonic_ratio = 1 / 4
@@ -114,7 +154,6 @@ def existing_tonic_length(intervals):
     for existing_beat in rhythm:
         if existing_beat == intervals[0]:
             existing_tonic_length += existing_beat
-
 def mode_by_score(score):
     # brightest first
     ranked_modes = [3, 0, 4, 1, 5, 2, 6]
@@ -132,28 +171,39 @@ def bpm_by_score(score):
     bpm_min, bpm_max = 40, 180
     bpm_range = bpm_max - bpm_min
     return bpm_min + round(bpm_range * score)
-
+def random_score():
+    return random.random()
 def string_values(p):
     # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
     return '[' + ', '.join(map(str, p)) + ']'
+def print_rhythm(rhythm):
+    print('Rhythm: [' + ', '.join('%.2f' % round(r / w, 2) for r in rhythm) + ']')
+def print_progression(progression):
+    print('Progression: [' + ', '.join(str(p + 1) for p in progression) + ']')
+def save_file(name='generated'):
+    file_name = name + '.mid' if not name.__contains__('.mid') else name
+    # https://www.w3schools.com/python/python_file_remove.asp
+    # because saving raises errors if the file already exists
+    if os.path.exists(file_name):
+        os.remove(file_name)
+    m.save(file_name)
 
+scale = Scale.Scale()
+print(Scale.get_note_name(scale.key) + ' ' + Scale.get_mode_name(scale.mode) + ' at ' + str(bpm) + 'bpm')
 
-key, mode = Scale.random_key_mode()
-print(Scale.get_note_name(key) + ' ' + Scale.get_mode_name(mode) + ' at ' + str(bpm) + 'bpm')
-rhythm = generate_progression_rhythm(2 * w, [w, h, q])
+rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2)
+print_rhythm(rhythm)
 progression = generate_progression(rhythm)
-print('Rhythm: ' + string_values(rhythm))
-print('Progression: ' + string_values(progression))
+print_progression(progression)
 
-# write messages
+# write messages, repeat
 repeats = 4
 for i in range(0, repeats):
-    for msg in generate_chords(rhythm=rhythm, progression=progression, key=key, mode=mode):
+    for msg in generate_chords(rhythm=rhythm, progression=progression, key=scale.key, mode=scale.mode):
         track.append(msg)
 
-# https://www.w3schools.com/python/python_file_remove.asp
-# because saving raises errors if the file already exists
-import os
-if os.path.exists('generated.mid'):
-    os.remove('generated.mid')
-m.save('generated.mid')
+# export file
+save_file()
+
+
+
