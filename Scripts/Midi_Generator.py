@@ -38,7 +38,8 @@ def set_instrument(instrument=-1):
     #if 0 > instrument >= 127:
     if instrument < 0 or instrument > 127:
         instrument = random.randint(0, 127)
-        print('Instrument: ' + Instruments.instruments[instrument])
+        print('Random instrument: ' + Instruments.instruments[instrument])
+    #print('Instrument set to: ' + Instruments.instruments[instrument])
     msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
     track.append(msg_program)
 def calculate_instrument(words, debug=False):
@@ -50,20 +51,43 @@ def calculate_instrument(words, debug=False):
             max = score
             ins = i
     if debug:
-        print('Instrument: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
-    return i
+        print('Instrument[' + str(ins) + ']: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
+    return ins
 def calculate_bpm(words, debug=False):
     slow_score = Words.compare(words, 'slowness')
     fast_score = Words.compare(words, 'fastness')
 
+    score = calculate_score(slow_score, fast_score)
+
     if debug:
-        print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + ']')
+        print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + '] -> ' + str(score))
+
+    return score
+def calculate_score(neg, pos):
+    # send higher value to 1
+    # calculate normalized difference
+    # divide by 2
+    # offset from 0.5
+    ratio = 0
+    if pos > neg:
+        ratio = 1 / pos
+    else:
+        ratio = 1 / neg
+    norm_neg = ratio * neg
+    norm_pos = ratio * pos
+    normalized_difference = norm_pos - norm_neg
+    offset = normalized_difference / 2
+    return 0.5 + offset
 def calculate_brightness(words, debug=False):
     bright_score = Words.compare(words, 'brightness')
     dark_score = Words.compare(words, 'darkness')
 
+    score = calculate_score(dark_score, bright_score)
+
     if debug:
-        print('Brightness: [%.2f' % round(dark_score, 2) + ', %.2f' % round(bright_score, 2) + ']')
+        print('Brightness: [%.2f' % round(dark_score, 2) + ', %.2f' % round(bright_score, 2) + '] -> ' +str(score))
+
+    return score
 def generate_chords(rhythm, progression, key, mode):
     if len(rhythm) != len(progression):
         print('Incompatible rhythm and progression')
@@ -200,10 +224,13 @@ def save_file(name='generated'):
     m.save(file_name)
 
 
-phrase = 'Its a sunny day on this old hill while I walk to work begrudgingly'
-calculate_instrument(phrase, debug=True)
-calculate_bpm(phrase, debug=True)
-calculate_brightness(phrase, debug=True)
+phrase = 'Man throwing a ball to his son'
+instrument = calculate_instrument(phrase, debug=True)
+bpm_score = calculate_bpm(phrase, debug=True)
+brightness_score = calculate_brightness(phrase, debug=True)
+
+bpm = bpm_by_score(bpm_score)
+mode = mode_by_score(1 - brightness_score)
 
 # create midi file, add a track
 m = MidiFile()
@@ -217,8 +244,6 @@ m.tracks.append(MidiTrack())
 track = m.tracks[0]
 
 # set song information
-bpm = random.randint(70, 160)
-tempo = mido.bpm2tempo(bpm)
 set_bpm(bpm)
 
 # create create timings
@@ -228,9 +253,9 @@ h = q * 2
 e = q // 2
 s = q // 4
 
-set_instrument()
+set_instrument(instrument)
 
-scale = Scale.Scale()
+scale = Scale.Scale(mode=mode)
 print(Scale.get_note_name(scale.key) + ' ' + Scale.get_mode_name(scale.mode) + ' at ' + str(bpm) + 'bpm')
 
 rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2, debug=True)
