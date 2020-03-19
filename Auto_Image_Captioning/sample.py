@@ -9,6 +9,7 @@ from building_vocab import Vocabulary
 from model import EncoderCNN, DecoderRNN
 from PIL import Image
 from extract_colors import DominantColors
+from color_emotions import color_check
 
 """
 Author: Dylan Lasher
@@ -65,15 +66,30 @@ def main(args):
     # Number of dominant colors you will find.
     dc = DominantColors(args.image, clusters)
     colors = dc.dominantColors()
-    
+
+    # Convert extracted colors to emotions
+    # (colors = array of identified colors)
+    closest_names = []
+    for i in range(len(colors)):
+        closest_color_weird_format = color_check.closest(color_check.color_list, colors[i])
+        closest_color_use = [closest_color_weird_format[0][0], closest_color_weird_format[0][1],
+                             closest_color_weird_format[0][2]]
+        for keys in color_check.colors:
+            if color_check.colors.get(keys) == closest_color_use:
+                closest_names.append(keys)
+    found_emotions = color_check.find_emotions(closest_names)
+
     # Convert word_ids to words
     sampled_caption = []
     for word_id in sampled_ids:
         word = vocab.idx2word[word_id]
         if word == '<end>':
             # Add mood description.
-            sampled_caption += ""
-
+            sampled_caption.append( "This image has colors that indicate emotional tones of ")
+            # ToDo: Append emotional words
+            for i in range(len(found_emotions)):
+                sampled_caption.append(found_emotions[i])
+                sampled_caption.append(",")
             sampled_caption.append(word)
             break
         sampled_caption.append(word)
@@ -81,7 +97,7 @@ def main(args):
     
     # Print image and generated caption
     print (sentence)
-    print(colors)
+    # print(colors) # Uncomment to print RGB values of colors
     image = Image.open(args.image)
     plt.imshow(np.asarray(image))
 
@@ -94,6 +110,8 @@ To run, go to Terminal and type:
   python sample.py --image picture_location --colors num_of_colors
   (where picture_location is the image. Example: images/ball.jpg)
   (num_of_colors is the number of dominant colors you want. Example: 4)
+  
+  Example: python sample.py --image images/ball.jpg --colors 4
   
   Check myHistogram.png for the histogram of extracted colors
 """

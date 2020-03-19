@@ -93,6 +93,7 @@ class DominantColors:
         plt.imshow(chart)
         #plt.show() # Remove comment to implement popup
 
+
 # Example implementation
 """
 img = 'images/ball.jpg'
