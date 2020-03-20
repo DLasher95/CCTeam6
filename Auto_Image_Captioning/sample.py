@@ -10,7 +10,12 @@ from model import EncoderCNN, DecoderRNN
 from PIL import Image
 from extract_colors import DominantColors
 from color_emotions import color_check
-
+import string
+import nltk
+from nltk.tokenize import word_tokenize
+from nltk.corpus import stopwords
+nltk.download('stopwords')
+nltk.download('punkt')
 """
 Author: Dylan Lasher
 Specs: Python 3.7, Windows 10
@@ -105,6 +110,23 @@ def main(args):
     dc.plotHistogram()
     plt.savefig("myHistogram.png")
 
+    # Create array of important words
+    sentence = sentence.replace("This image has colors that indicate emotional tones of", "")
+    sentence = sentence.replace("<start>", "")
+    sentence = sentence.replace("<end>", "")
+    exclude = set(string.punctuation)
+    sentence = ''.join(ch for ch in sentence if ch not in exclude) # Remove punctuation
+    stop_words = set(stopwords.words('english'))
+    word_tokens = nltk.word_tokenize(sentence)
+    filtered_sentence = [w for w in word_tokens if not w in stop_words]
+    filtered_sentence = []
+    for w in word_tokens:
+        if w not in stop_words:
+            filtered_sentence.append(w)
+
+    # Print results
+    print (sentence)
+    print(filtered_sentence)
 """
 To run, go to Terminal and type:
   python sample.py --image picture_location --colors num_of_colors
@@ -112,6 +134,9 @@ To run, go to Terminal and type:
   (num_of_colors is the number of dominant colors you want. Example: 4)
   
   Example: python sample.py --image images/ball.jpg --colors 4
+  If Auto_Image_Captioningisin a nestedfolder, keep that in mind for the script call.
+  
+  To grab the array of important words, grab the filtered_sentence array from this class
   
   Check myHistogram.png for the histogram of extracted colors
 """
