@@ -8,19 +8,17 @@ from torchvision import transforms
 from Auto_Image_Captioning.building_vocab import Vocabulary
 from Auto_Image_Captioning.model import EncoderCNN, DecoderRNN
 from PIL import Image
-<<<<<<< Updated upstream
-from extract_colors import DominantColors
-from color_emotions import color_check
+from Auto_Image_Captioning.extract_colors import DominantColors
+from Auto_Image_Captioning.color_emotions import color_check
 import string
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
-=======
+
 from Auto_Image_Captioning.extract_colors import DominantColors
 
->>>>>>> Stashed changes
 """
 Author: Dylan Lasher
 Specs: Python 3.7, Windows 10

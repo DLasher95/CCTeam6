@@ -7,3 +7,11 @@ https://www.dropbox.com/s/sykhn2jbn3mztlx/models.zip?dl=0
 
 This is a premade model, so you don't need to worry about re-running the training.
 Find the directions to use the Auto-Captioner in the sample.py folder.
+
+
+
+Packages and installations
+64-bit python: https://www.python.org/downloads/windows/
+pytorch: https://pytorch.org/get-started/locally/
+pip install Pillow
+pip install opencv-python

@@ -31,9 +31,6 @@ def compare(i1, i2, debug=False):
                     print(e)
 
     return score / count if count > 0 else 0
-<<<<<<< Updated upstream
-=======
-
 
 one = wn.synsets('cat')
 two = wn.synsets('baseball')
@@ -48,4 +45,3 @@ for i in one:
 
 #score = one.path_similarity(score / count)
 print('Score: ' + str(score / count))
->>>>>>> Stashed changes
