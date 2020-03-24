@@ -124,8 +124,7 @@ def main(args):
         if w not in stop_words:
             filtered_sentence.append(w)
 
-    # Print results
-    print (sentence)
+    # Print resulting array
     print(filtered_sentence)
 """
 To run, go to Terminal and type:
