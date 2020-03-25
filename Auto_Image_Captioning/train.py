@@ -4,10 +4,10 @@ import torch.nn as nn
 import numpy as np
 import os
 import pickle
-from data_loader import get_loader 
-from building_vocab import Vocabulary
-import building_vocab
-from model import EncoderCNN, DecoderRNN
+from Auto_Image_Captioning.data_loader import get_loader
+from Auto_Image_Captioning.building_vocab import Vocabulary
+import Auto_Image_Captioning.building_vocab
+from Auto_Image_Captioning.model import EncoderCNN, DecoderRNN
 from torch.nn.utils.rnn import pack_padded_sequence
 from torchvision import transforms
 """

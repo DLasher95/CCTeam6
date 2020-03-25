@@ -41,24 +41,55 @@ def set_instrument(instrument=-1):
         print('Instrument: ' + Instruments.instruments[instrument])
     msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
     track.append(msg_program)
-def calculate_instrument(words, debug=False):
+def calculate_instrument(phrase, debug=False):
     max = 0
     ins = 0
-    for i,name in enumerate(Instruments.instruments):
-        score = Words.compare(words, name, debug=False)
+
+
+
+    for i in Instruments.non_fx_instruments:
+        score = Words.compare(phrase, Instruments.instruments[i], debug=False)
         if score > max:
             max = score
             ins = i
     if debug:
+<<<<<<< Updated upstream
         print('Instrument: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
     return i
 def calculate_bpm(words, debug=False):
+=======
+        print('Instrument[' + str(ins) + ']: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
+    return ins
+def calculate_bpm_score(words, debug=False):
+>>>>>>> Stashed changes
     slow_score = Words.compare(words, 'slowness')
     fast_score = Words.compare(words, 'fastness')
 
     if debug:
+<<<<<<< Updated upstream
         print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + ']')
 def calculate_brightness(words, debug=False):
+=======
+        print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + '] -> ' + str(score))
+
+    return score
+def calculate_score(neg, pos):
+    # send higher value to 1
+    # calculate normalized difference
+    # divide by 2
+    # offset from 0.5
+    ratio = 0
+    if pos > neg:
+        ratio = 1 / pos
+    else:
+        ratio = 1 / neg
+    norm_neg = ratio * neg
+    norm_pos = ratio * pos
+    normalized_difference = norm_pos - norm_neg
+    offset = normalized_difference / 2
+    return 0.5 + offset
+def calculate_brightness_score(words, debug=False):
+>>>>>>> Stashed changes
     bright_score = Words.compare(words, 'brightness')
     dark_score = Words.compare(words, 'darkness')
 
@@ -200,10 +231,20 @@ def save_file(name='generated'):
     m.save(file_name)
 
 
+<<<<<<< Updated upstream
 phrase = 'Its a sunny day on this old hill while I walk to work begrudgingly'
 calculate_instrument(phrase, debug=True)
 calculate_bpm(phrase, debug=True)
 calculate_brightness(phrase, debug=True)
+=======
+phrase = 'I like doing shit with code ya know'
+instrument = calculate_instrument(phrase, debug=True)
+bpm_score = calculate_bpm_score(phrase, debug=True)
+brightness_score = calculate_brightness_score(phrase, debug=True)
+
+bpm = bpm_by_score(bpm_score)
+mode = mode_by_score(1 - brightness_score)
+>>>>>>> Stashed changes
 
 # create midi file, add a track
 m = MidiFile()

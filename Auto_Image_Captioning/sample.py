@@ -1,13 +1,14 @@
 import torch
 import matplotlib.pyplot as plt
-import numpy as np 
+import numpy as np
 import argparse
-import pickle 
+import pickle
 import os
-from torchvision import transforms 
-from building_vocab import Vocabulary
-from model import EncoderCNN, DecoderRNN
+from torchvision import transforms
+from Auto_Image_Captioning.building_vocab import Vocabulary
+from Auto_Image_Captioning.model import EncoderCNN, DecoderRNN
 from PIL import Image
+<<<<<<< Updated upstream
 from extract_colors import DominantColors
 from color_emotions import color_check
 import string
@@ -16,6 +17,10 @@ from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
 nltk.download('stopwords')
 nltk.download('punkt')
+=======
+from Auto_Image_Captioning.extract_colors import DominantColors
+
+>>>>>>> Stashed changes
 """
 Author: Dylan Lasher
 Specs: Python 3.7, Windows 10
