@@ -35,6 +35,15 @@ def load_image(image_path, transform=None):
     
     return image
 
+
+# Python code to remove duplicate elements
+def Remove(duplicate):
+    final_list = []
+    for num in duplicate:
+        if num not in final_list:
+            final_list.append(num)
+    return final_list
+
 def main(args):
     # Image preprocessing
     transform = transforms.Compose([
@@ -124,7 +133,8 @@ def main(args):
         if w not in stop_words:
             filtered_sentence.append(w)
 
-    # Print resulting array
+    # Print resulting array, minus duplicate strings
+    filtered_sentence = Remove(filtered_sentence)
     print(filtered_sentence)
 """
 To run, go to Terminal and type:
