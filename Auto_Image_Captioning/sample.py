@@ -143,7 +143,7 @@ To run, go to Terminal and type:
   (num_of_colors is the number of dominant colors you want. Example: 4)
   
   Example: python sample.py --image images/ball.jpg --colors 4
-  If Auto_Image_Captioningisin a nestedfolder, keep that in mind for the script call.
+  If Auto_Image_Captioning is in a nested folder, keep that in mind for the script call.
   
   To grab the array of important words, grab the filtered_sentence array from this class
   
