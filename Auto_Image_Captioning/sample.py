@@ -5,19 +5,20 @@ import argparse
 import pickle
 import os
 from torchvision import transforms
-from Auto_Image_Captioning.building_vocab import Vocabulary
-from Auto_Image_Captioning.model import EncoderCNN, DecoderRNN
+from building_vocab import Vocabulary
+from model import EncoderCNN, DecoderRNN
 from PIL import Image
-from Auto_Image_Captioning.extract_colors import DominantColors
-from Auto_Image_Captioning.color_emotions import color_check
+from extract_colors import DominantColors
+from color_emotions import color_check
 import string
 import nltk
 from nltk.tokenize import word_tokenize
 from nltk.corpus import stopwords
+from copyreg import *
 nltk.download('stopwords')
 nltk.download('punkt')
 
-from Auto_Image_Captioning.extract_colors import DominantColors
+from extract_colors import DominantColors
 
 """
 Author: Dylan Lasher
@@ -46,8 +47,9 @@ def main(args):
                              (0.229, 0.224, 0.225))])
     
     # Load vocabulary wrapper
-    with open(args.vocab_path, 'rb') as f:
-        vocab = pickle.load(f)
+    #with open(args.vocab_path, 'rb') as f:
+        #vocab = pickle.load(f)
+    vocab = ['dog', 'sitting', 'green', 'grass', 'covered', 'field', 'happiness']
 
     # Build models
     encoder = EncoderCNN(args.embed_size).eval()

@@ -1,7 +1,7 @@
 import mido
 import os
 import random
-from Scripts import Scale, Instruments, Words
+from Scripts import Scale, Instruments, Composition_Param_Calculator as pc
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 
 
@@ -33,55 +33,14 @@ def set_bpm(bpm=-1):
     track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
     #track.append(MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
     #track.append(MetaMessage('key_signature', key=Scale.get_note_name(0)))
-def set_instrument(instrument=-1):
+def set_instrument(ins=-1, debug=False):
     # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
-    #if 0 > instrument >= 127:
-    if instrument < 0 or instrument > 127:
-        instrument = random.randint(0, 127)
-        print('Instrument: ' + Instruments.instruments[instrument])
-    msg_program = Message(type='program_change', channel=0, program=instrument, time=0)
+    if not (0 <= ins <= 127):
+        ins = random.randint(0, 127)
+    if debug:
+        print('Instrument set to: ' + Instruments.instruments[ins])
+    msg_program = Message(type='program_change', channel=0, program=ins, time=0)
     track.append(msg_program)
-
-def calculate_instrument(phrase, debug=False):
-    max = 0
-    ins = 0
-    for i in Instruments.non_fx_instruments:
-        score = Words.compare(phrase, Instruments.instruments[i], debug=False)
-        if score > max:
-            max = score
-            ins = i
-    if debug:
-        print('Instrument: ' + Instruments.instruments[ins] + ' (%.2f' % round(max, 2) + ')')
-    return i
-def calculate_bpm_score(words, debug=False):
-    slow_score = Words.compare(words, 'slowness')
-    fast_score = Words.compare(words, 'fastness')
-
-    if debug:
-        print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + ']')
-    return calculate_score(slow_score, fast_score)
-def calculate_brightness_score(words, debug=False):
-    bright_score = Words.compare(words, 'brightness')
-    dark_score = Words.compare(words, 'darkness')
-
-    if debug:
-        print('Brightness: [%.2f' % round(dark_score, 2) + ', %.2f' % round(bright_score, 2) + ']')
-    return calculate_score(dark_score, bright_score)
-def calculate_score(neg, pos):
-    # send higher value to 1
-    # calculate normalized difference
-    # divide by 2
-    # offset from 0.5
-    ratio = 0
-    if pos > neg:
-        ratio = 1 / pos
-    else:
-        ratio = 1 / neg
-    norm_neg = ratio * neg
-    norm_pos = ratio * pos
-    normalized_difference = norm_pos - norm_neg
-    offset = normalized_difference / 2
-    return 0.5 + offset
 
 def generate_chords(rhythm, progression, key, mode):
     if len(rhythm) != len(progression):
@@ -184,25 +143,9 @@ def existing_tonic_length(intervals):
     for existing_beat in rhythm:
         if existing_beat == intervals[0]:
             existing_tonic_length += existing_beat
-def mode_by_score(score):
-    # brightest first
-    ranked_modes = [3, 0, 4, 1, 5, 2, 6]
-    if score < 0 or score > 1:
-        print('Expected score in range [0,1]')
-        return -1
 
-    # get int nearest score
-    return round(score)
-def bpm_by_score(score):
-    if score < 0 or score > 1:
-        print('Excpected value in range [0,1]')
-        return -1
 
-    bpm_min, bpm_max = 40, 180
-    bpm_range = bpm_max - bpm_min
-    return bpm_min + round(bpm_range * score)
-def random_score():
-    return random.random()
+
 def string_values(p):
     # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
     return '[' + ', '.join(map(str, p)) + ']'
@@ -218,13 +161,21 @@ def save_file(name='generated'):
         os.remove(file_name)
     m.save(file_name)
 
-phrase = 'Its a sunny day on this old hill while I walk to work begrudgingly'
-instrument = calculate_instrument(phrase, debug=True)
-bpm_score = calculate_bpm_score(phrase, debug=True)
-brightness_score = calculate_brightness_score(phrase, debug=True)
+examples = [
+    ['white', 'sheep', 'standing', 'field', 'happiness'],
+    ['man', 'umbrella', 'standing', 'front', 'building', 'fear', 'sadness', 'calmness'],
+    ['man', 'holding', 'cell', 'phone', 'hand', 'anger'],
+    ['brown', 'bear', 'standing', 'field', 'next', 'tree', 'calmness'],
+    ['dog', 'sitting', 'green', 'grass', 'covered', 'field', 'happiness'],
+    ['vase', 'flowers', 'sitting', 'table', 'fear', 'happiness'],
+    ['man', 'suit', 'tie', 'calmness'],
+    ['man', 'sitting', 'table', 'laptop', 'calmness'],
+    ['man', 'wearing', 'hat', 'tie', 'anger'],
+    ['black', 'white', 'cat', 'sitting', 'couch', 'fear'],
+    ['woman', 'sitting', 'bench', 'pink', 'umbrella', 'calmness']
+]
 
-bpm = bpm_by_score(bpm_score)
-mode = mode_by_score(1 - brightness_score)
+instrument, bpm, mode = pc.calculate_params(random.choice(examples), debug=True)
 
 # create midi file, add a track
 m = MidiFile()
@@ -246,9 +197,9 @@ h = q * 2
 e = q // 2
 s = q // 4
 
-set_instrument()
+set_instrument(instrument)
 
-scale = Scale.Scale()
+scale = Scale.Scale(mode=mode)
 print(Scale.get_note_name(scale.key) + ' ' + Scale.get_mode_name(scale.mode) + ' at ' + str(bpm) + 'bpm')
 
 rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2, debug=True)

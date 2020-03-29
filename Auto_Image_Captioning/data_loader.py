@@ -8,8 +8,8 @@ import nltk
 from PIL import Image
 #   from build_vocab import Vocabulary
 from pycocotools.coco import COCO
-from Auto_Image_Captioning.building_vocab import Vocabulary
-import Auto_Image_Captioning.building_vocab
+from building_vocab import Vocabulary
+import building_vocab
 """
 Author: Dylan Lasher
 Specs: Python 3.7, Windows 10
