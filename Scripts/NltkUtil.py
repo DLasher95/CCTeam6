@@ -9,7 +9,6 @@ from nltk.corpus import wordnet as wn
 from gensim.test.utils import common_texts, get_tmpfile
 from gensim.models import Word2Vec
 
-# https://www.programcreek.com/python/example/91606/nltk.corpus.wordnet.wup_similarity
 
 
 # this used to work lol
@@ -28,6 +27,7 @@ def compare_arrays(one, two):
 
     return score / count if count > 0 else 0
 
+# https://www.programcreek.com/python/example/91606/nltk.corpus.wordnet.wup_similarity
 def score_one_to_one(word1, word2):
     allsyns1 = set(ss for ss in wn.synsets(word1))
     allsyns2 = set(ss for ss in wn.synsets(word2))

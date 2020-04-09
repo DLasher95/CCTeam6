@@ -5,8 +5,6 @@ from Scripts import Scale, Instruments, Composition_Param_Calculator as pc
 from mido import MidiFile, MidiTrack, Message, MetaMessage
 
 
-
-
 class Composition:
     def __init__(self):
         self.midi_file = MidiFile()
@@ -30,19 +28,22 @@ def set_bpm(bpm=-1):
         bpm = random.randint(70, 160)
         print('BPM set to ' + str(bpm))
     tempo = mido.bpm2tempo(bpm)
-    track.append(MetaMessage('set_tempo', tempo=tempo, time=0))
+    m.tracks[0].append(MetaMessage('set_tempo', tempo=tempo, time=0))
     #track.append(MetaMessage('time_signature', numerator=4, denominator=4, clocks_per_click=24, notated_32nd_notes_per_beat=8, time=0))
     #track.append(MetaMessage('key_signature', key=Scale.get_note_name(0)))
-def set_instrument(ins=-1, debug=False):
+def set_instrument_single_track(ins=-1, debug=False):
     # https://i.gyazo.com/38682c2adf56d01422a7266f62c4794f.png
     if not (0 <= ins <= 127):
         ins = random.randint(0, 127)
     if debug:
         print('Instrument set to: ' + Instruments.instruments[ins])
     msg_program = Message(type='program_change', channel=0, program=ins, time=0)
-    track.append(msg_program)
+    m.tracks[0].append(msg_program)
+def set_instruments(instruments):
+    for i,ins in enumerate(instruments):
+        m.tracks[i].append(Message(type='program_change', channel=i, program=ins, time=0))
 
-def generate_chords(rhythm, progression, key, mode):
+def generate_messages(rhythm, progression, key, mode, track=0, voices=3):
     if len(rhythm) != len(progression):
         print('Incompatible rhythm and progression')
         return
@@ -54,24 +55,26 @@ def generate_chords(rhythm, progression, key, mode):
         # turn off current chord
         for k, n in enumerate(current):
             # only add delay for 2nd chord and beyond...
-            messages.append(msg_note_off.copy(note=n, time=rhythm[i - 1] if k == 0 else 0))
+            messages.append(msg_note_off.copy(note=n, time=rhythm[i - 1] if k == 0 else 0, channel=track))
 
         # turn on new chord, only if it's not the end of the progression
         if i < len(progression):
-            chord = Scale.chord(key=key, mode=mode, root=progression[i], voices=3)
+            chord = Scale.chord(key=key, mode=mode, root=progression[i], voices=voices)
             current.clear()
             for note in chord:
-                messages.append(msg_note_on.copy(note=note+offset))
+                messages.append(msg_note_on.copy(note=note+offset, channel=track))
                 current.append(note+offset)
             #print(string_values(current))
     return messages
 def generate_rhythm(length, options, min=-1, max=-1, max_length=-1, min_length=-1, debug=False):
     rhythm = []
-    # while controlling for [min or max] and it is not satisfied
+    # while there are not enough or are too many beats in the rhythm
     while 0 <= min > len(rhythm) or 0 <= max < len(rhythm):
         rhythm = []
         while sum(rhythm) < length:
             beat = random.choice(options)
+
+            # 50% chance to add a tie
             if random.random() < 0.5:
                 beat += random.choice(options)
 
@@ -96,8 +99,6 @@ def generate_beat(options, min_length=-1, max_length=-1):
     # while max_length < 0 or beat > max_length or beat < min_length
 
     return beat
-def generate_melody():
-    return 0
 def generate_progression(rhythm, debug=False):
     # ensure that (one of) the longest beat(s) is the tonic
     longest = max(rhythm)
@@ -140,15 +141,10 @@ def existing_tonic_length(intervals):
 
     # get existing tonic length
     existing_tonic_length = 0
-    for existing_beat in rhythm:
+    for existing_beat in rhythmA:
         if existing_beat == intervals[0]:
             existing_tonic_length += existing_beat
 
-
-
-def string_values(p):
-    # https://www.geeksforgeeks.org/python-program-to-convert-a-list-to-string/
-    return '[' + ', '.join(map(str, p)) + ']'
 def print_rhythm(rhythm):
     print('Rhythm: [' + ', '.join('%.2f' % round(r / w, 2) for r in rhythm) + ']')
 def print_progression(progression):
@@ -175,18 +171,24 @@ examples = [
     ['woman', 'sitting', 'bench', 'pink', 'umbrella', 'calmness']
 ]
 
-instrument, bpm, mode = pc.calculate_params(random.choice(examples), debug=True)
+# random.seed(42)
+# pc.np.random.seed(42)
 
-# create midi file, add a track
+phrase = random.choice(examples)
+
+instruments, bpm, mode = pc.calculate_params(phrase, debug=True)
+
+# create midi file and add tracks
 m = MidiFile()
+for i,j in enumerate(instruments):
+    m.tracks.append(MidiTrack())
 
-# type cannot be overridden
+set_instruments(instruments)
+#set_instrument(instruments[0])
+
+# type cannot be overridden. Copy these to append messages
 msg_note_on = Message(type='note_on', channel=0, note=60, velocity=100, time=0)
 msg_note_off = Message(type='note_off', channel=0, note=60, velocity=100, time=0)
-
-# create single channel track
-m.tracks.append(MidiTrack())
-track = m.tracks[0]
 
 set_bpm(bpm)
 
@@ -197,19 +199,72 @@ h = q * 2
 e = q // 2
 s = q // 4
 
-set_instrument(instrument)
 
 scale = Scale.Scale(mode=mode)
 print(Scale.get_note_name(scale.key) + ' ' + Scale.get_mode_name(scale.mode) + ' at ' + str(bpm) + 'bpm')
 
-rhythm = generate_rhythm(length=2 * w, options=[q, e], min=2, debug=True)
-progression = generate_progression(rhythm, debug=True)
+def generate_section(length, t_num=-1, key_change=0):
+    t_num = t_num if len(m.tracks) > t_num >= 0 else len(m.tracks)
 
-# write messages, repeat
-repeats = 4
-for i in range(0, repeats):
-    for msg in generate_chords(rhythm=rhythm, progression=progression, key=scale.key, mode=scale.mode):
-        track.append(msg)
+    parts = [None] * t_num
+    for i in range(t_num):
+        # print('PART: ' + str(i))
+        # generate messages for each part
+        rhythm = generate_rhythm(length=length, options=[e, h, w], min=2, max=8)
+        melody = generate_progression(rhythm)
+        messages = generate_messages(rhythm=rhythm, progression=melody, key=(scale.key + key_change) % 12, mode=scale.mode, voices=1, track=i)
+        parts[i] = messages
+
+        #for msg in messages:
+        # for msg in parts[i]:
+        #     m.tracks[i].append(msg)
+    return parts
+def write_section(parts):
+    for i,p in enumerate(parts):
+        for msg in p:
+            m.tracks[i].append(msg)
+
+A = generate_section(length=w * 3)
+B = generate_section(length=w * 4, key_change=-3)
+C = generate_section(length=w * 2, key_change=4)
+
+write_section(A)
+write_section(B)
+write_section(A)
+write_section(B)
+write_section(C)
+write_section(A)
+
+# print('-------------------------------------')
+# for msg in m:
+#     print(msg)
+#
+#
+# for track in m.tracks:
+#     for msg in track:
+#         print(msg)
+
+# rhythmA = generate_rhythm(length=2 * w, options=[h, q], min=2, debug=True)
+# progressionA = generate_progression(rhythmA, debug=True)
+#
+# rhythmB = generate_rhythm(length=2 * w, options=[h, q], min=2, debug=True)
+# progressionB = generate_progression(rhythmB, debug=True)
+#
+# rhythmC = generate_rhythm(length=2 * w, options=[h, q], min=2, debug=True)
+# progressionC = generate_progression(rhythmC, debug=True)
+#
+# for A in generate_messages(rhythm=rhythmA, progression=progressionA, key=scale.key, mode=scale.mode):
+#     m.tracks[0].append(A)
+# for B in generate_messages(rhythm=rhythmB, progression=progressionB, key=scale.key, mode=scale.mode):
+#     m.tracks[0].append(B)
+# for A in generate_messages(rhythm=rhythmA, progression=progressionA, key=scale.key, mode=scale.mode):
+#     m.tracks[0].append(A)
+# for C in generate_messages(rhythm=rhythmC, progression=progressionC, key=scale.key, mode=scale.mode):
+#     m.tracks[0].append(C)
+# for A in generate_messages(rhythm=rhythmA, progression=progressionA, key=scale.key, mode=scale.mode):
+#      m.tracks[0].append(A)
+# for B in generate_messages(rhythm=rhythmB, progression=progressionB, key=scale.key, mode=scale.mode):
+#     m.tracks[0].append(B)
 
 # export file
 save_file()

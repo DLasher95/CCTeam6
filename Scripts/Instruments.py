@@ -137,12 +137,12 @@ fx_instruments = [
     113, 114, 115, 116, 117, 118, 119, 120, 121, 122, 123, 124, 125, 126, 127
 ]
 
-non_fx_instruments = [i for i in range(128)]
+melodic_instruments = [i for i in range(128)]
 for i in fx_instruments:
-    non_fx_instruments.remove(i)
+    melodic_instruments.remove(i)
 
 non_fx_instrument_names = []
-for i in non_fx_instruments:
+for i in melodic_instruments:
     non_fx_instrument_names.append(instruments[i])
 
 fx_instrument_names = []
