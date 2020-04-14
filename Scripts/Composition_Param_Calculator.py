@@ -2,18 +2,48 @@ import random
 import numpy as np
 from Scripts import NltkUtil as nl, Instruments as insts, Scale
 
-def calculate_params(words, debug=False):
+class Music_Model:
+    params = {}
+    words = []
+    range_min = 0
+    range_max = 0
+    bpm = 0
+    mode = 0
+    key = 0
+    instruments = []
+
+    def print_model(self):
+        print('[' + ', '.join(w for w in self.words) + ']')
+        print('Instruments:\n' + '\n'.join(insts.instruments[i] for i in self.instruments))
+        print('Happiness score:  ' + str(self.params['happiness']))
+        print('Speed score:      ' + str(self.params['speed']))
+        print('Complexity score: ' + str(self.params['complexity']))
+        print('Pitch score:      ' + str(self.params['pitch']))
+        print('BPM: ' + str(self.bpm))
+        print('Mode: ' + str(self.mode) + ' (' + str(Scale.get_mode_name(self.mode)) + ')')
+        print('Range: ' + str(self.range_min) + ' - ' + str(self.range_max))
+
+def calculate_model(words, debug=False):
     speed_score = calculate_speed_score(words)
     happiness_score = calculate_happiness_score(words)
     complexity_score = calculate_complexity_score(words)
     pitch_score = calculate_pitch_score(words)
 
-    num_instruments = num_instruments_by_complexity(complexity_score)
-    instruments, inst_debug = pick_instruments(words, num_instruments=num_instruments, print_selected=debug)
-    range_min, range_max = range_by_pitch_and_complexity(pitch_score, complexity_score)
+    # use this pls
+    m = Music_Model()
+    m.words = words
+    m.params['complexity'] = complexity_score
+    m.params['pitch'] = pitch_score
+    m.params['happiness'] = happiness_score
+    m.params['speed'] = speed_score
 
-    bpm = bpm_by_score(speed_score)
-    mode = mode_by_score(happiness_score)
+    num_instruments = num_instruments_by_complexity(complexity_score)
+    m.instruments, inst_debug = pick_instruments(words, num_instruments=num_instruments, print_selected=debug)
+    m.range_min, m.range_max = range_by_pitch_and_complexity(pitch_score, complexity_score)
+
+    m.bpm = bpm_by_score(speed_score)
+    m.mode = mode_by_score(happiness_score)
+    m.key = random.choice(range(12))
 
     if debug:
         print('[' + ', '.join(w for w in words) + ']')
@@ -22,11 +52,13 @@ def calculate_params(words, debug=False):
         print('Speed score:      ' + str(speed_score))
         print('Complexity score: ' + str(complexity_score))
         print('Pitch score:      ' + str(pitch_score))
-        print('BPM: ' + str(bpm))
-        print('Mode: ' + str(mode) + ' (' + str(Scale.get_mode_name(mode)) + ')')
-        print('Range: ' + str(range_min) + ' - ' + str(range_max))
+        print('BPM: ' + str(m.bpm))
+        print('Mode: ' + str(m.mode) + ' (' + str(Scale.get_mode_name(m.mode)) + ')')
+        print('Key: ' + str(m.key) + ' (' + str(Scale.get_note_name(m.key)) + ')')
+        print('Range: ' + str(m.range_min) + ' - ' + str(m.range_max))
 
-    return instruments, bpm, mode
+    #return m.instruments, m.bpm, m.mode
+    return m
 
 def pick_instruments(phrase, num_instruments, selection_range=15, debug=False, print_selected=False):
     sorted_instrument_scores = rate_instruments(phrase=phrase, debug=debug)
@@ -88,8 +120,8 @@ def calculate_speed_score(words, debug=False):
         print('BPM: [%.2f' % round (slow_score, 2) + ', %.2f' % round(fast_score, 2) + ']')
     return normalize_score(slow_score, fast_score)
 def calculate_happiness_score(words, debug=False):
-    happy_score = nl.score_many_to_one(words, 'happy')
-    sad_score = nl.score_many_to_one(words, 'sad')
+    happy_score = nl.score_many_to_one(words, 'upbeat')
+    sad_score = nl.score_many_to_one(words, 'depressed')
 
     if debug:
         print('Happiness: [%.2f' % round(sad_score, 2) + ', %.2f' % round(happy_score, 2) + ']')
@@ -104,7 +136,7 @@ def calculate_pitch_score(words, debug=False):
     high_score = nl.score_many_to_one(words, 'high')
     low_score = nl.score_many_to_one(words, 'low')
     if debug:
-        print('Complexity: [%.2f' % round(low_score, 2) + ', %.2f' % round(high_score, 2) + ']')
+        print('Pitch: [%.2f' % round(low_score, 2) + ', %.2f' % round(high_score, 2) + ']')
     return normalize_score(low_score, high_score)
 def normalize_score(neg_score, pos_score):
     # send higher value to 1
