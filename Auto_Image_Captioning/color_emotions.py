@@ -7,7 +7,7 @@ Purpose: Assigning input RGB color to a labeled color using Euclidean distance.
 """
 
 class color_check:
-    colors = {
+    colors = { # Add colors not associated with emotion, like violet, to avoid too far a reach for an emotional color.
         'red': [255, 0, 0],
         'darkred' : [139,0,0],
         'maroon' : [128,0,0],
